@@ -1,6 +1,6 @@
 # Obstacle-Detecting Line Tracer (라인트레이서 + 장애물 감지)
 
-1학년 때 Arduino IDE로 만든 초보 단계 프로젝트입니다.  
+Arduino IDE로 만든 초보 단계 프로젝트입니다.  
 IR 센서로 Line Following을 하고, 초음파 센서로 전방 장애물을 감지해 Warning(경고) / Stop(정지) 동작을 추가했습니다.
 
 ---
