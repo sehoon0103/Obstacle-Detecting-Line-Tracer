@@ -1,11 +1,11 @@
-# Obstacle-Detecting Line Tracer (라인트레이서 + 장애물 감지)
+# Obstacle Detecting Line Tracer 
 
 Arduino IDE로 만든 초보 단계 프로젝트입니다.  
 IR 센서로 Line Following을 하고, 초음파 센서로 전방 장애물을 감지해 Warning(경고) / Stop(정지) 동작을 추가했습니다.
 
 ---
 
-## 1) 한 줄 소개(What)
+## 1) 한 줄 소개
 라인 추종 주행 중 전방 장애물 접근 시 부저/LED 경고 후 일정 거리 이하에서 모터 정지하는 라인트레이서입니다.
 
 ---
@@ -21,7 +21,7 @@ IR 센서로 Line Following을 하고, 초음파 센서로 전방 장애물을 �
 
 ---
 
-## 3) 동작 로직(Logic)
+## 3) 동작 로직
 
 ### (1) Obstacle Handling
 - HC-SR04로 거리(cm) 측정
@@ -31,7 +31,7 @@ IR 센서로 Line Following을 하고, 초음파 센서로 전방 장애물을 �
 - 거리 `<= STOP_DIST`:
   - 모터 즉시 정지
 
-### (2) Line Following (장애물 없을 때만)
+### (2) Line Following 
 - IR 센서(analog) 값을 threshold로 판정
 - 주행 제어
   - 좌/우 모두 감지 → 직진
@@ -41,7 +41,7 @@ IR 센서로 Line Following을 하고, 초음파 센서로 전방 장애물을 �
 
 ---
 
-## 4) 주요 파라미터(코드 기준)
+## 4) 주요 파라미터
 
 - IR threshold: `thrL = 750`, `thrR = 750`
 - speed: `80`
