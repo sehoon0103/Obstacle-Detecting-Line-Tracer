@@ -11,8 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare sketch folder
+        run: |
+          mkdir -p build_sketch
+          cp main.ino build_sketch/build_sketch.ino
       - uses: arduino/compile-sketches@v1
         with:
           fqbn: arduino:avr:uno
           sketch-paths: |
-            - .
+            - build_sketch
