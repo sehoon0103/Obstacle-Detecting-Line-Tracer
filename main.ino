@@ -4,36 +4,40 @@
   모터 드라이버: TB6612FNG (STBY 핀은 물리적으로 5V 레일에 연결)
 */
 
-#define AIN1_PIN   4   // 좌 모터 방향1
-#define AIN2_PIN   3   // 좌 모터 방향2
-#define PWMA_PIN   5   // 좌 모터 속도(PWM)
+constexpr uint8_t AIN1_PIN = 4;   // 좌 모터 방향1
+constexpr uint8_t AIN2_PIN = 3;   // 좌 모터 방향2
+constexpr uint8_t PWMA_PIN = 5;   // 좌 모터 속도(PWM)
 
-#define LED_WARN_PIN 7 // 거리감지 led
+constexpr uint8_t LED_WARN_PIN = 7; // 거리감지 led
 
-#define BIN1_PIN  10   // 우 모터 방향1
-#define BIN2_PIN   2   // 우 모터 방향2
-#define PWMB_PIN   6   // 우 모터 속도(PWM)
+constexpr uint8_t BIN1_PIN = 10;  // 우 모터 방향1
+constexpr uint8_t BIN2_PIN = 2;   // 우 모터 방향2
+constexpr uint8_t PWMB_PIN = 6;   // 우 모터 속도(PWM)
 
-#define IRL_PIN   A3    // 왼쪽 IR 센서
-#define IRR_PIN   A2    // 오른쪽 IR 센서
+constexpr uint8_t IRL_PIN = A3;   // 왼쪽 IR 센서
+constexpr uint8_t IRR_PIN = A2;   // 오른쪽 IR 센서
 
-#define TRIG_PIN   13    // 초음파 Trig
-#define ECHO_PIN   A0    // 초음파 Echo
-#define BUZZER_PIN 11    // 부저 tone
+constexpr uint8_t TRIG_PIN = 13;  // 초음파 Trig
+constexpr uint8_t ECHO_PIN = A0;  // 초음파 Echo
+constexpr uint8_t BUZZER_PIN = 11; // 부저 tone
 
 // 라인센서 임계값
 const int thrL = 750;
 const int thrR = 750;
 
 // 속도 및 거리
-const int speed = 80;
+const int baseSpeed = 80;
 const int STOP_DIST = 5;     // 즉시 정지 거리
 const int WARN_DIST = 12;    // 경고음 발생 거리
+const int BEEP_DURATION_MS = 150; // 부저 1회 재생 시간
 
-// 상태 변수
-bool obstacleDetected = false;
-bool isBeeping = false;
-unsigned long lastBeepTime = 0;
+// 장애물 감지 상태
+struct ObstacleState {
+  bool detected = false;
+  bool beeping = false;
+  unsigned long lastBeepTime = 0;
+};
+ObstacleState obstacleState;
 
 void setup() {
 
@@ -67,7 +71,7 @@ long measureDistance() {
   delayMicroseconds(10);
   digitalWrite(TRIG_PIN, LOW);
 
-  long duration = pulseIn(ECHO_PIN, HIGH, 60000);
+  unsigned long duration = pulseIn(ECHO_PIN, HIGH, 60000);
   if (duration == 0) return 0;
   return duration / 58;
 }
@@ -88,30 +92,30 @@ void handleObstacle(long dist) {
   unsigned long now = millis();
 
   if (dist > 0 && dist <= WARN_DIST) {
-    obstacleDetected = true;
+    obstacleState.detected = true;
     digitalWrite(LED_WARN_PIN, HIGH);  // LED ON
 
-    int interval = map(dist, STOP_DIST, WARN_DIST, 150, 500);
+    int interval = map(dist, STOP_DIST, WARN_DIST, BEEP_DURATION_MS, 500);
 
-    if (!isBeeping && now - lastBeepTime >= interval) {
-      tone(BUZZER_PIN, 1000, 150);  // 1kHz, 150ms
-      isBeeping = true;
-      lastBeepTime = now;
+    if (!obstacleState.beeping && now - obstacleState.lastBeepTime >= interval) {
+      tone(BUZZER_PIN, 1000, BEEP_DURATION_MS);  // 1kHz
+      obstacleState.beeping = true;
+      obstacleState.lastBeepTime = now;
     }
 
-    if (isBeeping && now - lastBeepTime >= 150) {
+    if (obstacleState.beeping && now - obstacleState.lastBeepTime >= BEEP_DURATION_MS) {
       noTone(BUZZER_PIN);
-      isBeeping = false;
+      obstacleState.beeping = false;
     }
 
     if (dist <= STOP_DIST) {
       drive(0, true, true);  // 즉시 정지
     }
   } else {
-    digitalWrite(LED_WARN_PIN, LOW);   // 🚨 LED OFF
+    digitalWrite(LED_WARN_PIN, LOW);   // LED OFF
     noTone(BUZZER_PIN);
-    isBeeping = false;
-    obstacleDetected = false;
+    obstacleState.beeping = false;
+    obstacleState.detected = false;
   }
 }
 
@@ -128,11 +132,11 @@ void loop() {
   bool onL = (vL > thrL);
   bool onR = (vR > thrR);
 
-  if (!obstacleDetected) {
-    if      (onL && onR) drive(speed, true,  true);   // 직진
-    else if (onL)        drive(speed, false, true);   // 좌회전
-    else if (onR)        drive(speed, true,  false);  // 우회전
-    else                 drive(0,     true,  true);   // 정지
+  if (!obstacleState.detected) {
+    if      (onL && onR) drive(baseSpeed, true,  true);   // 직진
+    else if (onL)        drive(baseSpeed, false, true);   // 좌회전
+    else if (onR)        drive(baseSpeed, true,  false);  // 우회전
+    else                 drive(0,         true,  true);   // 정지
   }
 
   // 4. 디버깅 출력
@@ -141,7 +145,7 @@ void loop() {
   Serial.print(" | L="); Serial.print(onL);
   Serial.print(" R="); Serial.print(onR);
   Serial.print(" | Dist="); Serial.print(dist);
-  Serial.print("cm | Obstacle="); Serial.println(obstacleDetected);
+  Serial.print("cm | Obstacle="); Serial.println(obstacleState.detected);
 
   delay(10);
 }
